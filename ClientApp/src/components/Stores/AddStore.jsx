@@ -17,30 +17,35 @@ export class AddStore extends React.Component {
     this.setState({ show: false });
   };
 
-  clearErrorMessages = () => {
+  clearMessages = () => {
     this.setState({
       errorMessage: undefined,
       successMessage: undefined
     });
   };
 
-  handleFormSubmit = (e) => {
+  handleFormSubmit = async (e) => {
     e.preventDefault();
     const name = e.target.elements.storeName.value.trim();
     const address = e.target.elements.storeAddress.value.trim();
-
-    const resp = this.props.handleAddStore({ name: name, address: address });
-
-    if (resp.status === "success") {
-      this.setState({ errorMessage: undefined, successMessage: resp.msg });
-      document.querySelector(".contact-form").reset();
-      setTimeout(this.clearErrorMessages, 5000);
-      this.handleClose();
-    } else {
-      this.setState({ errorMessage: resp.msg, successMessage: undefined });
-      setTimeout(this.clearErrorMessages, 5000);
+  
+    try {
+      const resp = await this.props.handleAddStore({ name: name, address: address });
+  
+      if (resp.status === "success") {
+        this.setState({ errorMessage: undefined, successMessage: resp.msg });
+        document.querySelector(".contact-form").reset();
+        setTimeout(this.clearMessages, 5000);
+        this.handleClose();
+      } else {
+        this.setState({ errorMessage: resp.msg, successMessage: undefined });
+        setTimeout(this.clearMessages, 5000);
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   };
+  
 
   render() {
     const { show } = this.state;

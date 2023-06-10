@@ -17,31 +17,35 @@ export class AddProduct extends React.Component {
     this.setState({ show: false });
   };
 
-  clearErrorMessages = () => {
+  clearMessages = () => {
     this.setState({
       errorMessage: undefined,
       successMessage: undefined
     });
   };
 
-  handleFormSubmit = (e) => {
+  handleFormSubmit = async (e) => {
     e.preventDefault();
     const name = e.target.elements.productName.value.trim();
     const price = e.target.elements.productPrice.value.trim();
-
-    const resp = this.props.handleAddProduct({ name: name, price: price });
-
-    if (resp.status === "success") {
-      this.setState({ errorMessage: undefined, successMessage: resp.msg });
-      document.querySelector(".product-form").reset();
-      setTimeout(this.clearErrorMessages, 5000);
-      this.handleClose();
-    } else {
-      this.setState({ errorMessage: resp.msg, successMessage: undefined });
-      setTimeout(this.clearErrorMessages, 5000);
+  
+    try {
+      const resp = await this.props.handleAddProduct({ name: name, price: price });
+  
+      if (resp.status === "success") {
+        this.setState({ errorMessage: undefined, successMessage: resp.msg });
+        document.querySelector(".product-form").reset();
+        setTimeout(this.clearMessages, 5000);
+        this.handleClose();
+      } else {
+        this.setState({ errorMessage: resp.msg, successMessage: undefined });
+        setTimeout(this.clearMessages, 5000);
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   };
-
+  
   render() {
     const { show } = this.state;
     return (

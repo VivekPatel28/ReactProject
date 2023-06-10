@@ -17,17 +17,22 @@ export class ProductsTable extends React.Component {
     });
   };
 
-  deleteProduct = () => {
-    const resp = this.props.onDeleteProduct(this.props.deleteProductId);
-
-    if (resp.status === "success") {
-      this.setState({ errorMessage: undefined, successMessage: resp.msg });
-      setTimeout(this.clearErrorMessages, 5000);
-    } else {
-      this.setState({ errorMessage: resp.msg, successMessage: undefined });
-      setTimeout(this.clearErrorMessages, 5000);
+  deleteProduct = async () => {
+    try {
+      const resp = await this.props.onDeleteProduct(this.props.deleteProductId);
+  
+      if (resp.status === "success") {
+        this.setState({ errorMessage: undefined, successMessage: resp.msg });
+        setTimeout(this.clearErrorMessages, 5000);
+      } else {
+        this.setState({ errorMessage: resp.msg, successMessage: undefined });
+        setTimeout(this.clearErrorMessages, 5000);
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   };
+  
   render() {
     const {
       products,
@@ -48,13 +53,6 @@ export class ProductsTable extends React.Component {
             {this.state.successMessage}
           </div>
         )}
-        {this.state.errorMessage === undefined ? (
-          <div></div>
-        ) : (
-          <div className="col-6 text-center text-danger">
-            {this.state.errorMessage}
-          </div>
-        )}
         </div>
         <table className="table table-hover">
           <thead className="table-dark">
@@ -70,7 +68,7 @@ export class ProductsTable extends React.Component {
             {products.map((product) => (
               <tr key={product.id}>
                 <td className="dataText">{product.name}</td>
-                <td className="dataText">{product.price}</td>
+                <td className="dataText">${product.price}</td>
                 <td>
                   <div className="col-2 col-md-6">
                     <button
@@ -125,7 +123,13 @@ export class ProductsTable extends React.Component {
                     </button>
                   </div>
                 </div>
-
+                {this.state.errorMessage === undefined ? (
+                  <div></div>
+                ) : (
+                  <div className="col-12 text-danger text-center">
+                    {this.state.errorMessage}
+                  </div>
+                )}
                 <div className="row">
                   <div className="col-6 p-3">
                     <button

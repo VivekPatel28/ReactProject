@@ -28,13 +28,13 @@ export class Stores extends React.Component {
       });
   };
 
-  handleAddStore = (newStore) => {
+  handleAddStore = async (newStore) => {
     if (newStore.name === "") {
       return { status: "failure", msg: "Please Enter a valid Store Name" };
     } else if (newStore.address === "") {
       return { status: "failure", msg: "Please Enter a valid Store Address" };
     }
-
+  
     const duplicateStore = this.state.stores.find(
       (store) =>
         store.name.trim() === newStore.name && store.address.trim() === newStore.address
@@ -42,15 +42,17 @@ export class Stores extends React.Component {
     if (duplicateStore) {
       return { status: "failure", msg: "Duplicate Record" };
     } else {
-      fetch("api/Stores", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newStore),
-      })
-        .then((response) => response.json())
-        .then((data) => {
+      try {
+        const response = await fetch("api/Stores", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newStore),
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
           const newId = data.id;
           const newFinalStore = {
             ...newStore,
@@ -59,39 +61,48 @@ export class Stores extends React.Component {
           this.setState((prevState) => ({
             stores: [...prevState.stores, newFinalStore],
           }));
-        })
-        .catch((error) => {
-          return { status: "failure", msg: error.message };
-        });
+  
+          return {
+            status: "success",
+            msg: "Store was added successfully",
+          };
+        } else {
+          throw new Error("Failed to add store");
+        }
+      } catch (error) {
+        return { status: "failure", msg: error.message };
+      }
+    }
+  };
+  
+
+  handleDeleteStore = async (storeId) => {
+    try {
+      const response = await fetch(`api/Stores/${storeId}`, {
+        method: "DELETE",
+      });
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          stores: prevState.stores.filter((store) => store.id !== storeId),
+        }));
+        this.handleCloseDelete();
+  
+        return {
+          status: "success",
+          msg: "Store was deleted successfully",
+        };
+      } else {
+        throw new Error("Failed to delete Store. The store may have existing sales records.");
+      }
+    } catch (error) {
       return {
-        status: "success",
-        msg: "Store was added successfully",
+        status: "failure",
+        msg: error.message,
       };
     }
   };
-
-  handleDeleteStore = (storeId) => {
-    fetch(`api/Stores/${storeId}`, {
-      method: "DELETE",
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            stores: prevState.stores.filter((store) => store.id !== storeId),
-          }));
-          this.handleCloseDelete();
-        } else {
-          throw new Error("Failed to delete Store");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
-      });
-      return {
-        status: "success",
-        msg: "Store was deleted successfully",
-      };
-  };
+  
 
   handleShowDelete = (storeId) => {
     this.setState({ showDeleteModal: true, deleteStoreId: storeId });
@@ -101,36 +112,39 @@ export class Stores extends React.Component {
     this.setState({ showDeleteModal: false, deleteStoreId: null });
   };
 
-  handleEditStore = (storeId, updatedStore) => {
-    fetch(`api/Stores/${storeId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedStore),
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            stores: prevState.stores.map((store) =>
-              store.id === storeId ? updatedStore : store
-            ),
-            showEditModal: false,
-            editStoreId: null,
-          }));
-          return {
-            status: "success",
-            msg: "Store was updated successfully",
-          };
-        } else {
-          throw new Error("Failed to update Store");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
+  handleEditStore = async (storeId, updatedStore) => {
+    try {
+      const response = await fetch(`api/Stores/${storeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedStore),
       });
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          stores: prevState.stores.map((store) =>
+            store.id === storeId ? updatedStore : store
+          ),
+          showEditModal: false,
+          editStoreId: null,
+        }));
+        return {
+          status: "success",
+          msg: "Store was updated successfully",
+        };
+      } else {
+        throw new Error("Failed to update Store");
+      }
+    } catch (error) {
+      return {
+        status: "failure",
+        msg: error.message,
+      };
+    }
   };
-
+  
   handleOpenEditModal = (storeId) => {
     this.setState({ showEditModal: true, editStoreId: storeId });
     console.log(storeId);

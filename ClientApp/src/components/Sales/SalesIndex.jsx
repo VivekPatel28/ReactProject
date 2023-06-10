@@ -58,72 +58,93 @@ export class Sales extends React.Component {
       });
   };
 
-  handleAddSale = (newSale) => {
-
-    if (newSale.customerId === "") {
-      return { status: "failure", msg: "Please select a valid Customer" };
-    } else if (newSale.productId === "") {
-      return { status: "failure", msg: "Please select a valid Product" };
-    } else if (newSale.storeId === "") {
-      return { status: "failure", msg: "Please select a valid Store" };
-    } else if (newSale.dateSold === "") {
-      return { status: "failure", msg: "Please enter a valid date of sale" };
-    } else {
-    fetch("api/Sales", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newSale),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        const newId = data.id;
-        const customerId = data.customerId;
-        const productId = data.productId;
-        const storeId = data.storeId;
-        const newFinalSale = {
-          ...newSale,
-          customerId,
-          productId,
-          storeId,
-          id: newId,
+  handleAddSale = async (newSale) => {
+    try {
+      if (newSale.customerId === "") {
+        return { status: "failure", msg: "Please select a valid Customer" };
+      } else if (newSale.productId === "") {
+        return { status: "failure", msg: "Please select a valid Product" };
+      } else if (newSale.storeId === "") {
+        return { status: "failure", msg: "Please select a valid Store" };
+      } else if (newSale.dateSold === "") {
+        return { status: "failure", msg: "Please enter a valid date of sale" };
+      }
+      const duplicateSale = this.state.sales.find(
+        (sale) =>
+          sale.customerId === newSale.customerId &&
+          sale.productId === newSale.productId &&
+          sale.storeId === newSale.storeId
+      );
+      if (duplicateSale) {
+        return {
+          status: "failure",
+          msg: "This sale record already exists.",
         };
-        this.setState((prevState) => ({
-          sales: [...prevState.sales, newFinalSale],
-        }));
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
-      });
-    return {
-      status: "success",
-      msg: "Sale was added successfully",
-    };
-  };
-}
+      } else {
+        const response = await fetch("api/Sales", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newSale),
+        });
 
-  handleDeleteSale = (saleId) => {
-    fetch(`api/Sales/${saleId}`, {
-      method: "DELETE",
-    })
-      .then((response) => {
         if (response.ok) {
+          const data = await response.json();
+          const newId = data.id;
+          const customerId = data.customerId;
+          const productId = data.productId;
+          const storeId = data.storeId;
+          const newFinalSale = {
+            ...newSale,
+            customerId,
+            productId,
+            storeId,
+            id: newId,
+          };
+
           this.setState((prevState) => ({
-            sales: prevState.sales.filter((sale) => sale.id !== saleId),
+            sales: [...prevState.sales, newFinalSale],
           }));
-          this.handleCloseDelete();
+
+          return {
+            status: "success",
+            msg: "Sale was added successfully",
+          };
         } else {
-          throw new Error("Failed to delete Sale");
+          throw new Error("Failed to add sale");
         }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
+      }
+    } catch (error) {
+      return { status: "failure", msg: error.message };
+    }
+  };
+
+  handleDeleteSale = async (saleId) => {
+    try {
+      const response = await fetch(`api/Sales/${saleId}`, {
+        method: "DELETE",
       });
+
+      if (response.ok) {
+        this.setState((prevState) => ({
+          sales: prevState.sales.filter((sale) => sale.id !== saleId),
+        }));
+        this.handleCloseDelete();
+
+        return {
+          status: "success",
+          msg: "Sale was deleted successfully",
+        };
+      } else {
+        throw new Error("Failed to delete Sale");
+      }
+    } catch (error) {
       return {
-        status: "success",
-        msg: "Sale was deleted successfully",
+        status: "failure",
+        msg: error.message,
       };
+    }
   };
 
   handleShowDelete = (saleId) => {
@@ -134,35 +155,40 @@ export class Sales extends React.Component {
     this.setState({ showDeleteModal: false, deleteSaleId: null });
   };
 
-  handleEditSale = (saleId, updatedSale) => {
-    fetch(`api/Sales/${saleId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedSale),
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            sales: prevState.sales.map((sale) =>
-              sale.id === saleId ? updatedSale : sale
-            ),
-            showEditModal: false,
-            editSaleId: null,
-          }));
-          return {
-            status: "success",
-            msg: "Sale was updated successfully",
-          };
-        } else {
-          throw new Error("Failed to update Sale");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
+  handleEditSale = async (saleId, updatedSale) => {
+    try {
+      const response = await fetch(`api/Sales/${saleId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedSale),
       });
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          sales: prevState.sales.map((sale) =>
+            sale.id === saleId ? updatedSale : sale
+          ),
+          showEditModal: false,
+          editSaleId: null,
+        }));
+  
+        return {
+          status: "success",
+          msg: "Sale was updated successfully",
+        };
+      } else {
+        throw new Error("Failed to update Sale");
+      }
+    } catch (error) {
+      return {
+        status: "failure",
+        msg: error.message,
+      };
+    }
   };
+  
 
   handleOpenEditModal = (saleId) => {
     this.setState({ showEditModal: true, editSaleId: saleId });

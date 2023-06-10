@@ -28,72 +28,80 @@ export class Products extends React.Component {
       });
   };
 
-  handleAddProduct = (newProduct) => {
+  handleAddProduct = async (newProduct) => {
     if (newProduct.name === "") {
-      return { status: "failure", msg: "Please Enter a valid Product Name" };
+      return { status: "failure", msg: "Please enter a valid Product Name" };
     } else if (newProduct.price === "") {
-      return { status: "failure", msg: "Please Enter a valid Price" };
+      return { status: "failure", msg: "Please enter a valid Price" };
     }
-
+  
     const duplicateProduct = this.state.products.find(
       (product) => product.name.trim() === newProduct.name
     );
     if (duplicateProduct) {
       return { status: "failure", msg: "Duplicate Record" };
     } else {
-      fetch("api/Products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newProduct),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          const newId = data.id;
-          const newFinalProduct = {
-            ...newProduct,
-            id: newId,
-          };
-          this.setState((prevState) => ({
-            products: [...prevState.products, newFinalProduct],
-          }));
-        })
-        .catch((error) => {
-          return { status: "failure", msg: error.message };
+      try {
+        const response = await fetch("api/Products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newProduct),
         });
+  
+        if (!response.ok) {
+          throw new Error("Failed to add product");
+        }
+  
+        const data = await response.json();
+        const newId = data.id;
+        const newFinalProduct = {
+          ...newProduct,
+          id: newId,
+        };
+        this.setState((prevState) => ({
+          products: [...prevState.products, newFinalProduct],
+        }));
+  
+        return {
+          status: "success",
+          msg: "Product was added successfully",
+        };
+      } catch (error) {
+        return { status: "failure", msg: error.message };
+      }
+    }
+  };
+  
+  handleDeleteProduct = async (productId) => {
+    try {
+      const response = await fetch(`api/Products/${productId}`, {
+        method: "DELETE",
+      });
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          products: prevState.products.filter(
+            (product) => product.id !== productId
+          ),
+        }));
+        this.handleCloseDelete();
+        return {
+          status: "success",
+          msg: "Product was deleted successfully",
+        };
+      } else {
+        throw new Error("Failed to delete Product. The Product may have existing sales records.");
+      }
+    } catch (error) {
       return {
-        status: "success",
-        msg: "Product was added successfully",
+        status: "failure",
+        msg: error.message,
       };
     }
   };
-
-  handleDeleteProduct = (productId) => {
-    fetch(`api/Products/${productId}`, {
-      method: "DELETE",
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            products: prevState.products.filter(
-              (product) => product.id !== productId
-            ),
-          }));
-          this.handleCloseDelete();
-          
-        } else {
-          throw new Error("Failed to delete Product");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
-      });
-      return {
-        status: "success",
-        msg: "Product was deleted successfully",
-      };
-  };
+  
 
   handleShowDelete = (productId) => {
     this.setState({ showDeleteModal: true, deleteProductId: productId });
@@ -103,36 +111,37 @@ export class Products extends React.Component {
     this.setState({ showDeleteModal: false, deleteProductId: null });
   };
 
-  handleEditProduct = (productId, updatedProduct) => {
-    fetch(`api/Products/${productId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedProduct),
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            products: prevState.products.map((product) =>
-              product.id === productId ? updatedProduct : product
-            ),
-            showEditModal: false,
-            editProductId: null,
-          }));
-          return {
-            status: "success",
-            msg: "Product was updated successfully",
-          };
-        } else {
-          throw new Error("Failed to update Product");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
+  handleEditProduct = async (productId, updatedProduct) => {
+    try {
+      const response = await fetch(`api/Products/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedProduct),
       });
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          products: prevState.products.map((product) =>
+            product.id === productId ? updatedProduct : product
+          ),
+          showEditModal: false,
+          editProductId: null,
+        }));
+  
+        return {
+          status: "success",
+          msg: "Product was updated successfully",
+        };
+      } else {
+        throw new Error("Failed to update Product");
+      }
+    } catch (error) {
+      return { status: "failure", msg: error.message };
+    }
   };
-
+  
   handleOpenEditModal = (productId) => {
     this.setState({ showEditModal: true, editProductId: productId });
     console.log(productId);

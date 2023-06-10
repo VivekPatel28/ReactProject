@@ -28,13 +28,13 @@ export class Customers extends React.Component {
       });
   };
 
-  handleAddCustomer = (newCustomer) => {
+  handleAddCustomer = async (newCustomer) => {
     if (newCustomer.name === "") {
       return { status: "failure", msg: "Please Enter a valid Name" };
     } else if (newCustomer.address === "") {
       return { status: "failure", msg: "Please Enter a valid Address" };
     }
-
+  
     const duplicateCustomer = this.state.customers.find(
       (customer) =>
         customer.name.trim() === newCustomer.name &&
@@ -43,57 +43,66 @@ export class Customers extends React.Component {
     if (duplicateCustomer) {
       return { status: "failure", msg: "Duplicate Record" };
     } else {
-      fetch("api/Customers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newCustomer),
-      })
-        .then((response) => response.json())
-        .then((data) => {
+      try {
+        const response = await fetch("api/Customers", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newCustomer),
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
           const newId = data.id;
           const newFinalCustomer = {
             ...newCustomer,
             id: newId,
           };
+  
           this.setState((prevState) => ({
             customers: [...prevState.customers, newFinalCustomer],
           }));
-        })
-        .catch((error) => {
-          return { status: "failure", msg: error.message };
-        });
-      return {
-        status: "success",
-        msg: "Customer was added successfully",
-      };
+  
+          return {
+            status: "success",
+            msg: "Customer was added successfully",
+          };
+        } else {
+          throw new Error("Failed to add customer");
+        }
+      } catch (error) {
+        return { status: "failure", msg: error.message };
+      }
     }
   };
-
-  handleDeleteCustomer = (customerId) => {
-    fetch(`api/Customers/${customerId}`, {
-      method: "DELETE",
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            customers: prevState.customers.filter(
-              (customer) => customer.id !== customerId
-            ),
-          }));
-          this.handleCloseDelete();
-        } else {
-          throw new Error("Failed to delete customer");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
+  
+  handleDeleteCustomer = async (customerId) => {
+    try {
+      const response = await fetch(`api/Customers/${customerId}`, {
+        method: "DELETE",
       });
-    return {
-      status: "success",
-      msg: "Customer was deleted successfully",
-    };
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          customers: prevState.customers.filter(
+            (customer) => customer.id !== customerId
+          ),
+        }));
+        this.handleCloseDelete();
+        return {
+          status: "success",
+          msg: "Customer was deleted successfully",
+        };
+      } else {
+        throw new Error("Failed to delete this customer. The customer may have existing sales records.");
+      }
+    } catch (error) {
+      return {
+        status: "failure",
+        msg: error.message,
+      };
+    }
   };
 
   handleShowDelete = (customerId) => {
@@ -104,36 +113,40 @@ export class Customers extends React.Component {
     this.setState({ showDeleteModal: false, deleteCustomerId: null });
   };
 
-  handleEditCustomer = (customerId, updatedCustomer) => {
-    fetch(`api/Customers/${customerId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedCustomer),
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.setState((prevState) => ({
-            customers: prevState.customers.map((customer) =>
-              customer.id === customerId ? updatedCustomer : customer
-            ),
-            showEditModal: false,
-            editCustomerId: null,
-          }));
-          return {
-            status: "success",
-            msg: "Customer was updated successfully",
-          };
-        } else {
-          throw new Error("Failed to update customer");
-        }
-      })
-      .catch((error) => {
-        return { status: "failure", msg: error.message };
+  handleEditCustomer = async (customerId, updatedCustomer) => {
+    try {
+      const response = await fetch(`api/Customers/${customerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedCustomer),
       });
+  
+      if (response.ok) {
+        this.setState((prevState) => ({
+          customers: prevState.customers.map((customer) =>
+            customer.id === customerId ? updatedCustomer : customer
+          ),
+          showEditModal: false,
+          editCustomerId: null,
+        }));
+  
+        return {
+          status: "success",
+          msg: "Customer was updated successfully",
+        };
+      } else {
+        throw new Error("Failed to update customer");
+      }
+    } catch (error) {
+      return {
+        status: "failure",
+        msg: error.message,
+      };
+    }
   };
-
+  
   handleOpenEditModal = (customerId) => {
     this.setState({ showEditModal: true, editCustomerId: customerId });
     console.log(customerId);

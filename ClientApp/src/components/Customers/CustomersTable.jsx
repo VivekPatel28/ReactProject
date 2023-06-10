@@ -9,24 +9,27 @@ export class CustomersTable extends React.Component {
     };
   }
 
-  clearErrorMessages = () => {
+  clearMessages = () => {
     this.setState({
       errorMessage: undefined,
       successMessage: undefined
     });
   };
 
-  deleteCustomer = () => {
-    const resp = this.props.onDeleteCustomer(this.props.deleteCustomerId);
-
-    if (resp.status === "success") {
-      this.setState({ errorMessage: undefined, successMessage: resp.msg });
-      setTimeout(this.clearErrorMessages, 5000);
-    } else {
-      this.setState({ errorMessage: resp.msg, successMessage: undefined });
-      setTimeout(this.clearErrorMessages, 5000);
-    }
+  deleteCustomer = async () => {
+    
+      const resp = await this.props.onDeleteCustomer(this.props.deleteCustomerId);
+  
+      if (resp.status === "success") {
+        this.setState({ errorMessage: undefined, successMessage: resp.msg });
+        setTimeout(this.clearMessages, 5000);
+      } else {
+        this.setState({ errorMessage: resp.msg, successMessage: undefined });
+        setTimeout(this.clearMessages, 5000);
+      }
+    
   };
+  
   
   render() {
     const {
@@ -48,13 +51,7 @@ export class CustomersTable extends React.Component {
             {this.state.successMessage}
           </div>
         )}
-        {this.state.errorMessage === undefined ? (
-          <div></div>
-        ) : (
-          <div className="col-6 text-center text-danger">
-            {this.state.errorMessage}
-          </div>
-        )}
+        
         </div>
         <table className="table table-hover">
           <thead className="table-dark">
@@ -116,6 +113,7 @@ export class CustomersTable extends React.Component {
                   <h3 className="col-8 text-center text-black py-5">
                     Are you sure you want to Delete this customer?
                   </h3>
+                  
                   <div className="col-4 text-end p-3">
                     <button
                       className="btn border-black btnGray btn-sm m-1"
@@ -125,7 +123,13 @@ export class CustomersTable extends React.Component {
                     </button>
                   </div>
                 </div>
-
+                {this.state.errorMessage === undefined ? (
+                  <div></div>
+                ) : (
+                  <div className="col-12 text-danger text-center">
+                    {this.state.errorMessage}
+                  </div>
+                )}
                 <div className="row">
                   <div className="col-6 p-3">
                     <button

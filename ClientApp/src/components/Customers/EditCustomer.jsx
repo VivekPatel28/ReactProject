@@ -26,13 +26,13 @@ export class EditCustomerModal extends React.Component {
     this.setState({ [name]: value });
   };
 
-  handleSave = () => {
+  handleSave = async () => {
     const { customerId, onEditCustomer } = this.props;
     const { name, address } = this.state;
     const updatedCustomer = { id: customerId, name, address };
-    onEditCustomer(customerId, updatedCustomer);
+    await onEditCustomer(customerId, updatedCustomer);
   };
-
+  
   render() {
     const { onCloseModal } = this.props;
     const { name, address } = this.state;

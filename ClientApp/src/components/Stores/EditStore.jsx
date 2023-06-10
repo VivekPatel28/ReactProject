@@ -26,11 +26,11 @@ export class EditStoreModal extends React.Component {
     this.setState({ [name]: value.trim() });
   };
 
-  handleSave = () => {
+  handleSave = async () => {
     const { storeId, onEditStore } = this.props;
     const { name, address } = this.state;
     const updatedStore = { id: storeId, name, address };
-    onEditStore(storeId, updatedStore);
+    await onEditStore(storeId, updatedStore);
   };
 
   render() {

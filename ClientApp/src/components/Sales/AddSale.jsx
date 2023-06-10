@@ -18,37 +18,42 @@ export class AddSale extends React.Component {
     this.setState({ show: false });
   };
 
-  clearErrorMessages = () => {
+  clearMessages = () => {
     this.setState({
       errorMessage: undefined,
       successMessage: undefined
     });
   };
 
-  handleFormSubmit = (e) => {
+  handleFormSubmit = async (e) => {
     e.preventDefault();
     const dateSold = e.target.elements.saleDate.value.trim();
     const customerId = e.target.elements.customerName.value;
     const productId = e.target.elements.productName.value;
     const storeId = e.target.elements.storeName.value;
-
-    const resp = this.props.handleAddSale({
-      dateSold: dateSold,
-      customerId: customerId,
-      productId: productId,
-      storeId: storeId,
-    });
-
-    if (resp.status === "success") {
-      this.setState({ errorMessage: undefined, successMessage: resp.msg });
-      document.querySelector(".contact-form").reset();
-      setTimeout(this.clearErrorMessages, 5000);
-      this.handleClose();
-    } else {
-      this.setState({ errorMessage: resp.msg, successMessage: undefined });
-      setTimeout(this.clearErrorMessages, 5000);
+  
+    try {
+      const resp = await this.props.handleAddSale({
+        dateSold: dateSold,
+        customerId: customerId,
+        productId: productId,
+        storeId: storeId,
+      });
+  
+      if (resp.status === "success") {
+        this.setState({ errorMessage: undefined, successMessage: resp.msg });
+        document.querySelector(".contact-form").reset();
+        setTimeout(this.clearMessages, 5000);
+        this.handleClose();
+      } else {
+        this.setState({ errorMessage: resp.msg, successMessage: undefined });
+        setTimeout(this.clearMessages, 5000);
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   };
+  
 
   render() {
     const { show } = this.state;

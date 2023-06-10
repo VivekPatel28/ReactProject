@@ -34,7 +34,7 @@ export class EditSaleModal extends React.Component {
     this.setState({ [name]: value });
   };
 
-  handleSave = () => {
+  handleSave = async () => {
     const { saleId, onEditSale } = this.props;
     const { dateSold, customerId, productId, storeId } = this.state;
     const updatedSale = {
@@ -44,7 +44,7 @@ export class EditSaleModal extends React.Component {
       productId: productId,
       storeId: storeId,
     };
-    onEditSale(saleId, updatedSale);
+    await onEditSale(saleId, updatedSale);
     this.refreshPage();
   };
 
