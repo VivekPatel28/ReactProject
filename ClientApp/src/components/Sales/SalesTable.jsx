@@ -102,7 +102,7 @@ export class SalesTable extends React.Component {
                     {new Date(sale.dateSold).toLocaleDateString()}
                   </td>
                   <td>
-                    <div className="col-2 col-md-6">
+                    <div className="col-2 col-md-10">
                       <button
                         className="btn btn-outline-dark btn-sm m-1"
                         onClick={() => onOpenEditModal(sale.id)}
@@ -116,7 +116,7 @@ export class SalesTable extends React.Component {
                     </div>
                   </td>
                   <td>
-                    <div className="col-2 col-md-6 ">
+                    <div className="col-2 col-md-10 ">
                       <button
                         className="btn border-black btnGray btn-sm m-1"
                         onClick={() => handleShowDelete(sale.id)}

@@ -48,10 +48,10 @@ code {
 .dataText {
   font-size: medium;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
-  color: black;
+  color: rgb(13, 13, 14);
 }
 
 .btnGray {
-  background-color: rgb(34, 34, 37);
+  background-color: rgb(51, 51, 51);
   color: #fff;
 }
