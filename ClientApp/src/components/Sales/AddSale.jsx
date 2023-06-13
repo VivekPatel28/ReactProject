@@ -5,8 +5,6 @@ export class AddSale extends React.Component {
     super(props);
     this.state = {
       show: false,
-      errorMessage: undefined,
-      successMessage: undefined,
     };
   }
 
@@ -18,20 +16,16 @@ export class AddSale extends React.Component {
     this.setState({ show: false });
   };
 
-  clearMessages = () => {
-    this.setState({
-      errorMessage: undefined,
-      successMessage: undefined
-    });
-  };
-
   handleFormSubmit = async (e) => {
     e.preventDefault();
-    const dateSold = e.target.elements.saleDate.value.trim();
-    const customerId = e.target.elements.customerName.value;
-    const productId = e.target.elements.productName.value;
-    const storeId = e.target.elements.storeName.value;
-  
+    const dateSold = e.target.elements.saleDate.value;
+    const customerId = parseInt(
+      e.target.elements.customerName.value.trim(),
+      10
+    );
+    const productId = parseInt(e.target.elements.productName.value.trim(), 10);
+    const storeId = parseInt(e.target.elements.storeName.value.trim(), 10);
+
     try {
       const resp = await this.props.handleAddSale({
         dateSold: dateSold,
@@ -39,21 +33,15 @@ export class AddSale extends React.Component {
         productId: productId,
         storeId: storeId,
       });
-  
+
       if (resp.status === "success") {
-        this.setState({ errorMessage: undefined, successMessage: resp.msg });
         document.querySelector(".contact-form").reset();
-        setTimeout(this.clearMessages, 5000);
         this.handleClose();
-      } else {
-        this.setState({ errorMessage: resp.msg, successMessage: undefined });
-        setTimeout(this.clearMessages, 5000);
       }
     } catch (error) {
       console.log(error.message);
     }
   };
-  
 
   render() {
     const { show } = this.state;
@@ -63,14 +51,6 @@ export class AddSale extends React.Component {
         <button className="btn border-black btnGray" onClick={this.handleShow}>
           Create New Sale
         </button>
-        {this.state.successMessage === undefined ? (
-          <div></div>
-        ) : (
-          <div className="col-12 text-bg-success text-center p-2">
-            {this.state.successMessage}
-          </div>
-        )}
-
         {show && (
           <div onClick={this.handleClose} className="overlay">
             <div
@@ -146,14 +126,6 @@ export class AddSale extends React.Component {
                       name="saleDate"
                     ></input>
                   </div>
-                  {this.state.errorMessage === undefined ? (
-                    <div></div>
-                  ) : (
-                    <div className="col-12 text-center text-danger">
-                      {this.state.errorMessage}
-                    </div>
-                  )}
-
                   <div className="col-6 p-3">
                     <button className="btn border-black btnGray form-control">
                       Create

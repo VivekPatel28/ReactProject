@@ -2,6 +2,8 @@ import React from "react";
 import { AddStore } from "./AddStore";
 import { StoresTable } from "./StoresTable";
 import { EditStoreModal } from "./EditStore";
+import toastr from "toastr";
+import "toastr/build/toastr.css";
 
 export class Stores extends React.Component {
   constructor(props) {
@@ -18,6 +20,20 @@ export class Stores extends React.Component {
 
   componentDidMount() {
     this.fetchStores();
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      preventDuplicates: true,
+      showDuration: 300,
+      hideDuration: 1000,
+      timeOut: 5000,
+      extendedTimeOut: 1000,
+      showEasing: "swing",
+      hideEasing: "linear",
+      showMethod: "fadeIn",
+      hideMethod: "fadeOut",
+    };
   }
 
   fetchStores = () => {
@@ -30,17 +46,29 @@ export class Stores extends React.Component {
 
   handleAddStore = async (newStore) => {
     if (newStore.name === "") {
-      return { status: "failure", msg: "Please Enter a valid Store Name" };
+      toastr.error("Please enter a valid Name", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
     } else if (newStore.address === "") {
-      return { status: "failure", msg: "Please Enter a valid Store Address" };
+      toastr.error("Please enter a valid Address", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
     }
-  
+
     const duplicateStore = this.state.stores.find(
       (store) =>
-        store.name.trim() === newStore.name && store.address.trim() === newStore.address
+        store.name.trim() === newStore.name &&
+        store.address.trim() === newStore.address
     );
     if (duplicateStore) {
-      return { status: "failure", msg: "Duplicate Record" };
+      toastr.error(
+        "Duplicate Record, Please check the Store details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+      return { status: "failure" };
     } else {
       try {
         const response = await fetch("api/Stores", {
@@ -50,7 +78,7 @@ export class Stores extends React.Component {
           },
           body: JSON.stringify(newStore),
         });
-  
+
         if (response.ok) {
           const data = await response.json();
           const newId = data.id;
@@ -61,48 +89,44 @@ export class Stores extends React.Component {
           this.setState((prevState) => ({
             stores: [...prevState.stores, newFinalStore],
           }));
-  
-          return {
-            status: "success",
-            msg: "Store was added successfully",
-          };
+          toastr.success("Store was added successfully");
+          return { status: "success" };
         } else {
-          throw new Error("Failed to add store");
+          toastr.error("Failed to add Store", "", {
+            positionClass: "toast-center",
+          });
+          return { status: "failure" };
         }
       } catch (error) {
-        return { status: "failure", msg: error.message };
+        toastr.error(error.message);
+        return { status: "failure" };
       }
     }
   };
-  
 
   handleDeleteStore = async (storeId) => {
     try {
       const response = await fetch(`api/Stores/${storeId}`, {
         method: "DELETE",
       });
-  
+
       if (response.ok) {
         this.setState((prevState) => ({
           stores: prevState.stores.filter((store) => store.id !== storeId),
         }));
         this.handleCloseDelete();
-  
-        return {
-          status: "success",
-          msg: "Store was deleted successfully",
-        };
+        toastr.success("Store was deleted successfully");
       } else {
-        throw new Error("Failed to delete Store. The store may have existing sales records.");
+        toastr.error(
+          "Failed to delete this store. The store may have existing sale records.",
+          "",
+          { positionClass: "toast-center" }
+        );
       }
     } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
+      toastr.error("Failed to delete the store");
     }
   };
-  
 
   handleShowDelete = (storeId) => {
     this.setState({ showDeleteModal: true, deleteStoreId: storeId });
@@ -113,38 +137,71 @@ export class Stores extends React.Component {
   };
 
   handleEditStore = async (storeId, updatedStore) => {
-    try {
-      const response = await fetch(`api/Stores/${storeId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedStore),
+    if (updatedStore.name === "") {
+      toastr.error("Please enter a valid Name", "", {
+        positionClass: "toast-center",
       });
-  
-      if (response.ok) {
-        this.setState((prevState) => ({
-          stores: prevState.stores.map((store) =>
-            store.id === storeId ? updatedStore : store
-          ),
-          showEditModal: false,
-          editStoreId: null,
-        }));
-        return {
-          status: "success",
-          msg: "Store was updated successfully",
-        };
-      } else {
-        throw new Error("Failed to update Store");
+      return { status: "failure" };
+    } else if (updatedStore.address === "") {
+      toastr.error("Please enter a valid Address", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
+    }
+    const duplicateStore = this.state.stores.find(
+      (store) =>
+        store.name.trim() === updatedStore.name &&
+        store.address.trim() === updatedStore.address
+    );
+    const noChange = this.state.stores.find(
+      (store) =>
+        store.id === storeId &&
+        store.name.trim() === updatedStore.name &&
+        store.address.trim() === updatedStore.address
+    );
+    if (noChange) {
+      toastr.error(
+        'No changes found, Please make the required changes and click "Save changes" or cancel the update',
+        "",
+        { positionClass: "toast-center" }
+      );
+    } else if (duplicateStore) {
+      toastr.error(
+        "Duplicate Record, Please check the Store details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+      return { status: "failure" };
+    } else {
+      try {
+        const response = await fetch(`api/Stores/${storeId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedStore),
+        });
+
+        if (response.ok) {
+          this.setState((prevState) => ({
+            stores: prevState.stores.map((store) =>
+              store.id === storeId ? updatedStore : store
+            ),
+            showEditModal: false,
+            editStoreId: null,
+          }));
+          toastr.success("Store was updated successfully");
+        } else {
+          toastr.error("Failed to update store, Please try again", "", {
+            positionClass: "toast-center",
+          });
+        }
+      } catch (error) {
+        toastr.error(error.message, "", { positionClass: "toast-center" });
       }
-    } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
     }
   };
-  
+
   handleOpenEditModal = (storeId) => {
     this.setState({ showEditModal: true, editStoreId: storeId });
     console.log(storeId);

@@ -1,14 +1,15 @@
 ﻿import React from "react";
+import toastr from "toastr";
+import "toastr/build/toastr.css";
 
 export class AddCustomer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       show: false,
-      errorMessage: undefined,
-      successMessage: undefined,
     };
   }
+
   handleShow = () => {
     this.setState({ show: true });
   };
@@ -17,35 +18,25 @@ export class AddCustomer extends React.Component {
     this.setState({ show: false });
   };
 
-  clearMessages = () => {
-    this.setState({
-      errorMessage: undefined,
-      successMessage: undefined
-    });
-  };
-
   handleFormSubmit = async (e) => {
     e.preventDefault();
     const name = e.target.elements.customerName.value.trim();
     const address = e.target.elements.customerAddress.value.trim();
-  
+
     try {
-      const resp = await this.props.handleAddCustomer({ name: name, address: address });
-  
+      const resp = await this.props.handleAddCustomer({
+        name: name,
+        address: address,
+      });
+
       if (resp.status === "success") {
-        this.setState({ errorMessage: undefined, successMessage: resp.msg });
         document.querySelector(".contact-form").reset();
-        setTimeout(this.clearMessages, 5000);
         this.handleClose();
-      } else {
-        this.setState({ errorMessage: resp.msg, successMessage: undefined });
-        setTimeout(this.clearMessages, 5000);
       }
     } catch (error) {
       console.log(error.message);
     }
   };
-  
 
   render() {
     const { show } = this.state;
@@ -54,14 +45,6 @@ export class AddCustomer extends React.Component {
         <button className="btn border-black btnGray" onClick={this.handleShow}>
           Create New Customer
         </button>
-        {this.state.successMessage === undefined ? (
-          <div></div>
-        ) : (
-          <div className="col-12 text-bg-success text-center p-2">
-            {this.state.successMessage}
-          </div>
-        )}
-
         {show && (
           <div onClick={this.handleClose} className="overlay">
             <div
@@ -100,14 +83,6 @@ export class AddCustomer extends React.Component {
                       name="customerAddress"
                     ></input>
                   </div>
-                  {this.state.errorMessage === undefined ? (
-                    <div></div>
-                  ) : (
-                    <div className="col-12 text-center text-danger">
-                      {this.state.errorMessage}
-                    </div>
-                  )}
-
                   <div className="col-6 p-3">
                     <button className="btn border-black btnGray form-control">
                       Create

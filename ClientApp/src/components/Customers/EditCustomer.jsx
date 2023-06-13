@@ -32,13 +32,24 @@ export class EditCustomerModal extends React.Component {
     const updatedCustomer = { id: customerId, name, address };
     await onEditCustomer(customerId, updatedCustomer);
   };
-  
+
   render() {
     const { onCloseModal } = this.props;
     const { name, address } = this.state;
     return (
-      <div onClick={onCloseModal} className="overlay" tabIndex="-1" role="dialog">
-        <div onClick={(e)=>{e.stopPropagation()}} className="modalContainer" role="document">
+      <div
+        onClick={onCloseModal}
+        className="overlay"
+        tabIndex="-1"
+        role="dialog"
+      >
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          className="modalContainer"
+          role="document"
+        >
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Edit Customer</h5>
@@ -46,7 +57,9 @@ export class EditCustomerModal extends React.Component {
                 type="button"
                 className="btn border-black btnGray btn-sm m-1"
                 onClick={onCloseModal}
-              >X</button>
+              >
+                X
+              </button>
             </div>
             <div className="modal-body">
               <div className="form-group">

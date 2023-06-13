@@ -2,6 +2,8 @@
 import { AddCustomer } from "./AddCustomer";
 import { CustomersTable } from "./CustomersTable";
 import { EditCustomerModal } from "./EditCustomer";
+import toastr from "toastr";
+import "toastr/build/toastr.css";
 
 export class Customers extends React.Component {
   constructor(props) {
@@ -18,6 +20,20 @@ export class Customers extends React.Component {
 
   componentDidMount() {
     this.fetchCustomers();
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      preventDuplicates: true,
+      showDuration: 300,
+      hideDuration: 1000,
+      timeOut: 5000,
+      extendedTimeOut: 1000,
+      showEasing: "swing",
+      hideEasing: "linear",
+      showMethod: "fadeIn",
+      hideMethod: "fadeOut",
+    };
   }
 
   fetchCustomers = () => {
@@ -30,18 +46,28 @@ export class Customers extends React.Component {
 
   handleAddCustomer = async (newCustomer) => {
     if (newCustomer.name === "") {
-      return { status: "failure", msg: "Please Enter a valid Name" };
+      toastr.error("Please enter a valid Name", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
     } else if (newCustomer.address === "") {
-      return { status: "failure", msg: "Please Enter a valid Address" };
+      toastr.error("Please enter a valid Address", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
     }
-  
     const duplicateCustomer = this.state.customers.find(
       (customer) =>
         customer.name.trim() === newCustomer.name &&
         customer.address.trim() === newCustomer.address
     );
     if (duplicateCustomer) {
-      return { status: "failure", msg: "Duplicate Record" };
+      toastr.error(
+        "Duplicate Record, Please check the customer details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+      return { status: "failure" };
     } else {
       try {
         const response = await fetch("api/Customers", {
@@ -51,7 +77,7 @@ export class Customers extends React.Component {
           },
           body: JSON.stringify(newCustomer),
         });
-  
+
         if (response.ok) {
           const data = await response.json();
           const newId = data.id;
@@ -59,24 +85,25 @@ export class Customers extends React.Component {
             ...newCustomer,
             id: newId,
           };
-  
+
           this.setState((prevState) => ({
             customers: [...prevState.customers, newFinalCustomer],
           }));
-  
-          return {
-            status: "success",
-            msg: "Customer was added successfully",
-          };
+          toastr.success("Customer was added successfully");
+          return { status: "success" };
         } else {
-          throw new Error("Failed to add customer");
+          toastr.error("Failed to add customer", "", {
+            positionClass: "toast-center",
+          });
+          return { status: "failure" };
         }
       } catch (error) {
-        return { status: "failure", msg: error.message };
+        toastr.error(error.message);
+        return { status: "failure" };
       }
     }
   };
-  
+
   handleDeleteCustomer = async (customerId) => {
     try {
       const response = await fetch(`api/Customers/${customerId}`, {
@@ -90,21 +117,21 @@ export class Customers extends React.Component {
           ),
         }));
         this.handleCloseDelete();
-        return {
-          status: "success",
-          msg: "Customer was deleted successfully",
-        };
+        toastr.success("Customer was deleted successfully");
+      } else if (response.status === 500) {
+        toastr.error(
+          "Failed to delete this customer. The customer may have existing sale records.",
+          "",
+          { positionClass: "toast-center" }
+        );
       } else {
-        throw new Error("Failed to delete this customer. The customer may have existing sales records.");
+        toastr.error("Failed to delete the customer");
       }
     } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
+      toastr.error("Failed to delete the customer");
     }
   };
-
+  
   handleShowDelete = (customerId) => {
     this.setState({ showDeleteModal: true, deleteCustomerId: customerId });
   };
@@ -114,39 +141,70 @@ export class Customers extends React.Component {
   };
 
   handleEditCustomer = async (customerId, updatedCustomer) => {
-    try {
-      const response = await fetch(`api/Customers/${customerId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedCustomer),
+    if (updatedCustomer.name === "") {
+      toastr.error("Please enter a valid Name", "", {
+        positionClass: "toast-center",
       });
-  
-      if (response.ok) {
-        this.setState((prevState) => ({
-          customers: prevState.customers.map((customer) =>
-            customer.id === customerId ? updatedCustomer : customer
-          ),
-          showEditModal: false,
-          editCustomerId: null,
-        }));
-  
-        return {
-          status: "success",
-          msg: "Customer was updated successfully",
-        };
-      } else {
-        throw new Error("Failed to update customer");
+      return { status: "failure" };
+    } else if (updatedCustomer.address === "") {
+      toastr.error("Please enter a valid Address", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
+    }
+    const duplicateCustomer = this.state.customers.find(
+      (customer) =>
+        customer.name.trim() === updatedCustomer.name.trim() &&
+        customer.address.trim() === updatedCustomer.address.trim()
+    );
+    const noChange = this.state.customers.find(
+      (customer) =>
+        customer.id === customerId &&
+        customer.name.trim() === updatedCustomer.name &&
+        customer.address.trim() === updatedCustomer.address
+    );
+    if (noChange) {
+      toastr.error(
+        'No changes found, Please make the required changes and click "Save changes" or cancel the update',
+        "",
+        { positionClass: "toast-center" }
+      );
+    } else if (duplicateCustomer) {
+      toastr.error(
+        "Duplicate Record, Please check the customer details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+    } else {
+      try {
+        const response = await fetch(`api/Customers/${customerId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedCustomer),
+        });
+
+        if (response.ok) {
+          this.setState((prevState) => ({
+            customers: prevState.customers.map((customer) =>
+              customer.id === customerId ? updatedCustomer : customer
+            ),
+            showEditModal: false,
+            editCustomerId: null,
+          }));
+          toastr.success("Customer was updated successfully");
+        } else {
+          toastr.error("Failed to update customer, Please try again", "", {
+            positionClass: "toast-center",
+          });
+        }
+      } catch (error) {
+        toastr.error(error.message, "", { positionClass: "toast-center" });
       }
-    } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
     }
   };
-  
+
   handleOpenEditModal = (customerId) => {
     this.setState({ showEditModal: true, editCustomerId: customerId });
     console.log(customerId);
@@ -173,6 +231,14 @@ export class Customers extends React.Component {
         <div className="col-6 py-1 text-end">
           <AddCustomer handleAddCustomer={this.handleAddCustomer} />
         </div>
+        {showEditModal && (
+          <EditCustomerModal
+            customerId={editCustomerId}
+            customers={customers}
+            onEditCustomer={this.handleEditCustomer}
+            onCloseModal={this.handleCloseEditModal}
+          />
+        )}
 
         {loading ? (
           <p>
@@ -194,14 +260,6 @@ export class Customers extends React.Component {
               </div>
             </div>
           </div>
-        )}
-        {showEditModal && (
-          <EditCustomerModal
-            customerId={editCustomerId}
-            customers={customers}
-            onEditCustomer={this.handleEditCustomer}
-            onCloseModal={this.handleCloseEditModal}
-          />
         )}
       </div>
     );

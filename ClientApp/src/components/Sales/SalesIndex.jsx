@@ -2,6 +2,8 @@ import React from "react";
 import { AddSale } from "./AddSale";
 import { SalesTable } from "./SalesTable";
 import { EditSaleModal } from "./EditSale";
+import toastr from "toastr";
+import "toastr/build/toastr.css";
 
 export class Sales extends React.Component {
   constructor(props) {
@@ -24,6 +26,20 @@ export class Sales extends React.Component {
     this.fetchSales();
     this.fetchProducts();
     this.fetchStores();
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      preventDuplicates: true,
+      showDuration: 300,
+      hideDuration: 1000,
+      timeOut: 5000,
+      extendedTimeOut: 1000,
+      showEasing: "swing",
+      hideEasing: "linear",
+      showMethod: "fadeIn",
+      hideMethod: "fadeOut",
+    };
   }
 
   fetchCustomers = () => {
@@ -60,26 +76,40 @@ export class Sales extends React.Component {
 
   handleAddSale = async (newSale) => {
     try {
-      if (newSale.customerId === "") {
-        return { status: "failure", msg: "Please select a valid Customer" };
-      } else if (newSale.productId === "") {
-        return { status: "failure", msg: "Please select a valid Product" };
-      } else if (newSale.storeId === "") {
-        return { status: "failure", msg: "Please select a valid Store" };
+      if (!newSale.customerId) {
+        toastr.error("Please select a valid Customer", "", {
+          positionClass: "toast-center",
+        });
+        return { status: "failure" };
+      } else if (!newSale.productId) {
+        toastr.error("Please select a valid Product", "", {
+          positionClass: "toast-center",
+        });
+        return { status: "failure" };
+      } else if (!newSale.storeId) {
+        toastr.error("Please select a valid Store", "", {
+          positionClass: "toast-center",
+        });
+        return { status: "failure" };
       } else if (newSale.dateSold === "") {
-        return { status: "failure", msg: "Please enter a valid date of sale" };
+        toastr.error("Please select a valid date of sale", "", {
+          positionClass: "toast-center",
+        });
+        return { status: "failure" };
       }
       const duplicateSale = this.state.sales.find(
         (sale) =>
           sale.customerId === newSale.customerId &&
           sale.productId === newSale.productId &&
-          sale.storeId === newSale.storeId
+          sale.storeId === newSale.storeId &&
+          new Date(sale.dateSold).toLocaleDateString() ===
+            new Date(newSale.dateSold).toLocaleDateString()
       );
       if (duplicateSale) {
-        return {
-          status: "failure",
-          msg: "This sale record already exists.",
-        };
+        toastr.error("Duplicate Record, This sale record already exists.", "", {
+          positionClass: "toast-center",
+        });
+        return { status: "failure" };
       } else {
         const response = await fetch("api/Sales", {
           method: "POST",
@@ -106,17 +136,18 @@ export class Sales extends React.Component {
           this.setState((prevState) => ({
             sales: [...prevState.sales, newFinalSale],
           }));
-
-          return {
-            status: "success",
-            msg: "Sale was added successfully",
-          };
+          toastr.success("The sale details were added successfully");
+          return { status: "success" };
         } else {
-          throw new Error("Failed to add sale");
+          toastr.error("Failed to add sale details", "", {
+            positionClass: "toast-center",
+          });
+          return { status: "failure" };
         }
       }
     } catch (error) {
-      return { status: "failure", msg: error.message };
+      toastr.error(error.message);
+      return { status: "failure" };
     }
   };
 
@@ -131,19 +162,14 @@ export class Sales extends React.Component {
           sales: prevState.sales.filter((sale) => sale.id !== saleId),
         }));
         this.handleCloseDelete();
-
-        return {
-          status: "success",
-          msg: "Sale was deleted successfully",
-        };
+        toastr.success("Sale was deleted successfully");
       } else {
-        throw new Error("Failed to delete Sale");
+        toastr.error("Failed to delete the sale details.", "", {
+          positionClass: "toast-center",
+        });
       }
     } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
+      toastr.error("Failed to delete the customer");
     }
   };
 
@@ -156,39 +182,85 @@ export class Sales extends React.Component {
   };
 
   handleEditSale = async (saleId, updatedSale) => {
-    try {
-      const response = await fetch(`api/Sales/${saleId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedSale),
+    if (!updatedSale.customerId) {
+      toastr.error("Please select a valid Customer Name", "", {
+        positionClass: "toast-center",
       });
-  
-      if (response.ok) {
-        this.setState((prevState) => ({
-          sales: prevState.sales.map((sale) =>
-            sale.id === saleId ? updatedSale : sale
-          ),
-          showEditModal: false,
-          editSaleId: null,
-        }));
-  
-        return {
-          status: "success",
-          msg: "Sale was updated successfully",
-        };
-      } else {
-        throw new Error("Failed to update Sale");
+      return { status: "failure" };
+    } else if (!updatedSale.productId) {
+      toastr.error("Please select a valid Product Name", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
+    } else if (!updatedSale.storeId) {
+      toastr.error("Please select a valid Store Name", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
+    } else if (updatedSale.dateSold === "") {
+      toastr.error("Please enter a valid date of sale", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
+    }
+    const duplicateSale = this.state.sales.find(
+      (sale) =>
+        sale.customerId === updatedSale.customerId &&
+        sale.productId === updatedSale.productId &&
+        sale.storeId === updatedSale.storeId &&
+        new Date(sale.dateSold).toLocaleDateString() ===
+          new Date(updatedSale.dateSold).toLocaleDateString()
+    );
+    const noChange = this.state.sales.find(
+      (sale) =>
+        sale.id === saleId &&
+        sale.customerId === updatedSale.customerId &&
+        sale.productId === updatedSale.productId &&
+        sale.storeId === updatedSale.storeId &&
+        new Date(sale.dateSold).toLocaleDateString() ===
+          new Date(updatedSale.dateSold).toLocaleDateString()
+    );
+    if (noChange) {
+      toastr.error(
+        'No changes found, Please make the required changes and click "Save changes" or cancel the update',
+        "",
+        { positionClass: "toast-center" }
+      );
+    } else if (duplicateSale) {
+      toastr.error(
+        "Duplicate Record, Please check the sale details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+    } else {
+      try {
+        const response = await fetch(`api/Sales/${saleId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedSale),
+        });
+
+        if (response.ok) {
+          this.setState((prevState) => ({
+            sales: prevState.sales.map((sale) =>
+              sale.id === saleId ? updatedSale : sale
+            ),
+            showEditModal: false,
+            editSaleId: null,
+          }));
+          toastr.success("Sale details were updated successfully");
+        } else {
+          toastr.error("Failed to update Sale details, Please try again", "", {
+            positionClass: "toast-center",
+          });
+        }
+      } catch (error) {
+        toastr.error(error.message, "", { positionClass: "toast-center" });
       }
-    } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
     }
   };
-  
 
   handleOpenEditModal = (saleId) => {
     this.setState({ showEditModal: true, editSaleId: saleId });

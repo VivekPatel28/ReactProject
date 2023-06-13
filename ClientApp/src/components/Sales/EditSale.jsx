@@ -40,12 +40,11 @@ export class EditSaleModal extends React.Component {
     const updatedSale = {
       id: saleId,
       dateSold: dateSold,
-      customerId: customerId,
-      productId: productId,
-      storeId: storeId,
+      customerId: parseInt(customerId, 10),
+      productId: parseInt(productId, 10),
+      storeId: parseInt(storeId, 10),
     };
     await onEditSale(saleId, updatedSale);
-    this.refreshPage();
   };
 
   render() {

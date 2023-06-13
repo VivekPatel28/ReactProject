@@ -2,6 +2,8 @@ import React from "react";
 import { AddProduct } from "./AddProduct";
 import { ProductsTable } from "./ProductsTable";
 import { EditProductModal } from "./EditProduct";
+import toastr from "toastr";
+import "toastr/build/toastr.css";
 
 export class Products extends React.Component {
   constructor(props) {
@@ -18,6 +20,20 @@ export class Products extends React.Component {
 
   componentDidMount() {
     this.fetchProducts();
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      preventDuplicates: true,
+      showDuration: 300,
+      hideDuration: 1000,
+      timeOut: 5000,
+      extendedTimeOut: 1000,
+      showEasing: "swing",
+      hideEasing: "linear",
+      showMethod: "fadeIn",
+      hideMethod: "fadeOut",
+    };
   }
 
   fetchProducts = () => {
@@ -30,16 +46,26 @@ export class Products extends React.Component {
 
   handleAddProduct = async (newProduct) => {
     if (newProduct.name === "") {
-      return { status: "failure", msg: "Please enter a valid Product Name" };
+      toastr.error("Please enter a valid Name", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
     } else if (newProduct.price === "") {
-      return { status: "failure", msg: "Please enter a valid Price" };
+      toastr.error("Please enter appropiate price", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
     }
-  
     const duplicateProduct = this.state.products.find(
       (product) => product.name.trim() === newProduct.name
     );
     if (duplicateProduct) {
-      return { status: "failure", msg: "Duplicate Record" };
+      toastr.error(
+        "Duplicate Record, Please check the product details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+      return { status: "failure" };
     } else {
       try {
         const response = await fetch("api/Products", {
@@ -49,11 +75,11 @@ export class Products extends React.Component {
           },
           body: JSON.stringify(newProduct),
         });
-  
+
         if (!response.ok) {
           throw new Error("Failed to add product");
         }
-  
+
         const data = await response.json();
         const newId = data.id;
         const newFinalProduct = {
@@ -63,23 +89,21 @@ export class Products extends React.Component {
         this.setState((prevState) => ({
           products: [...prevState.products, newFinalProduct],
         }));
-  
-        return {
-          status: "success",
-          msg: "Product was added successfully",
-        };
+        toastr.success("Product was added successfully");
+        return { status: "success" };
       } catch (error) {
-        return { status: "failure", msg: error.message };
+        toastr.error(error.message);
+        return { status: "failure" };
       }
     }
   };
-  
+
   handleDeleteProduct = async (productId) => {
     try {
       const response = await fetch(`api/Products/${productId}`, {
         method: "DELETE",
       });
-  
+
       if (response.ok) {
         this.setState((prevState) => ({
           products: prevState.products.filter(
@@ -87,21 +111,18 @@ export class Products extends React.Component {
           ),
         }));
         this.handleCloseDelete();
-        return {
-          status: "success",
-          msg: "Product was deleted successfully",
-        };
+        toastr.success("Product was deleted successfully");
       } else {
-        throw new Error("Failed to delete Product. The Product may have existing sales records.");
+        toastr.error(
+          "Failed to delete this product. The product may have existing sale records.",
+          "",
+          { positionClass: "toast-center" }
+        );
       }
     } catch (error) {
-      return {
-        status: "failure",
-        msg: error.message,
-      };
+      toastr.error("Failed to delete the product");
     }
   };
-  
 
   handleShowDelete = (productId) => {
     this.setState({ showDeleteModal: true, deleteProductId: productId });
@@ -112,36 +133,69 @@ export class Products extends React.Component {
   };
 
   handleEditProduct = async (productId, updatedProduct) => {
-    try {
-      const response = await fetch(`api/Products/${productId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedProduct),
+    if (updatedProduct.name === "") {
+      toastr.error("Please enter a valid Name", "", {
+        positionClass: "toast-center",
       });
-  
-      if (response.ok) {
-        this.setState((prevState) => ({
-          products: prevState.products.map((product) =>
-            product.id === productId ? updatedProduct : product
-          ),
-          showEditModal: false,
-          editProductId: null,
-        }));
-  
-        return {
-          status: "success",
-          msg: "Product was updated successfully",
-        };
-      } else {
-        throw new Error("Failed to update Product");
+      return { status: "failure" };
+    } else if (updatedProduct.price === "") {
+      toastr.error("Please enter appropiate price", "", {
+        positionClass: "toast-center",
+      });
+      return { status: "failure" };
+    }
+    const duplicateProduct = this.state.products.find(
+      (product) => product.name.trim() === updatedProduct.name.trim()
+    );
+    const noChange = this.state.products.find(
+      (product) =>
+        product.id === productId &&
+        product.name.trim() === updatedProduct.name &&
+        product.price === updatedProduct.price
+    );
+    if (noChange) {
+      toastr.error(
+        'No changes found, Please make the required changes and click "Save changes" or cancel the update',
+        "",
+        { positionClass: "toast-center" }
+      );
+    } else if (duplicateProduct) {
+      toastr.error(
+        "Duplicate Record, Please check the product details again",
+        "",
+        { positionClass: "toast-center" }
+      );
+      return { status: "failure" };
+    } else {
+      try {
+        const response = await fetch(`api/Products/${productId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedProduct),
+        });
+
+        if (response.ok) {
+          this.setState((prevState) => ({
+            products: prevState.products.map((product) =>
+              product.id === productId ? updatedProduct : product
+            ),
+            showEditModal: false,
+            editProductId: null,
+          }));
+          toastr.success("Product was updated successfully");
+        } else {
+          toastr.error("Failed to update product, Please try again", "", {
+            positionClass: "toast-center",
+          });
+        }
+      } catch (error) {
+        toastr.error(error.message, "", { positionClass: "toast-center" });
       }
-    } catch (error) {
-      return { status: "failure", msg: error.message };
     }
   };
-  
+
   handleOpenEditModal = (productId) => {
     this.setState({ showEditModal: true, editProductId: productId });
     console.log(productId);

@@ -1,40 +1,6 @@
 import React from "react";
 
 export class StoresTable extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      errorMessage: undefined,
-      successMessage: undefined,
-    };
-  }
-
-  clearMessages = () => {
-    this.setState({
-      errorMessage: undefined,
-      successMessage: undefined
-    });
-  };
-
-  deleteStore = async () => {
-    try {
-      const resp = await this.props.onDeleteStore(this.props.deleteStoreId);
-  
-      if (resp.status === "success") {
-        this.setState({ errorMessage: undefined, successMessage: resp.msg });
-        setTimeout(this.clearMessages, 5000);
-      } else {
-        this.setState({ errorMessage: resp.msg, successMessage: undefined });
-        setTimeout(this.clearMessages, 5000);
-      }
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
-  
-
-
   render() {
     const {
       stores,
@@ -43,19 +9,10 @@ export class StoresTable extends React.Component {
       handleShowDelete,
       handleCloseDelete,
       deleteStoreId,
+      onDeleteStore,
     } = this.props;
     return (
       <div className="col-12">
-      <div className="row">
-      <div className="col-6"></div>
-        {this.state.successMessage === undefined ? (
-          <div></div>
-        ) : (
-          <div className="col-6 text-bg-danger text-center p-2">
-            {this.state.successMessage}
-          </div>
-        )}
-        </div>
         <table className="table table-hover">
           <thead className="table-dark">
             <tr>
@@ -125,13 +82,6 @@ export class StoresTable extends React.Component {
                     </button>
                   </div>
                 </div>
-                {this.state.errorMessage === undefined ? (
-                  <div></div>
-                ) : (
-                  <div className="col-12 text-danger text-center">
-                    {this.state.errorMessage}
-                  </div>
-                )}
                 <div className="row">
                   <div className="col-6 p-3">
                     <button
@@ -144,7 +94,7 @@ export class StoresTable extends React.Component {
                   <div className="col-6 p-3">
                     <button
                       className="btn btnGray border-black form-control"
-                      onClick={this.deleteStore}
+                      onClick={() => onDeleteStore(deleteStoreId)}
                     >
                       Delete
                     </button>

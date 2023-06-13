@@ -19,10 +19,10 @@ namespace ReactProject.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
         {
-          if (_context.Customers == null)
-          {
-              return NotFound();
-          }
+            if (_context.Customers == null)
+            {
+                return NotFound();
+            }
             return await _context.Customers.ToListAsync();
         }
 
@@ -30,10 +30,10 @@ namespace ReactProject.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Customer>> GetCustomer(int id)
         {
-          if (_context.Customers == null)
-          {
-              return NotFound();
-          }
+            if (_context.Customers == null)
+            {
+                return NotFound();
+            }
             var customer = await _context.Customers.FindAsync(id);
 
             if (customer == null)
@@ -80,10 +80,10 @@ namespace ReactProject.Controllers
         [HttpPost]
         public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
         {
-          if (_context.Customers == null)
-          {
-              return Problem("Entity set 'SalesDBContext.Customers'  is null.");
-          }
+            if (_context.Customers == null)
+            {
+                return Problem("Entity set 'SalesDBContext.Customers'  is null.");
+            }
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
@@ -94,20 +94,41 @@ namespace ReactProject.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
-            if (_context.Customers == null)
+            try
             {
-                return NotFound();
+                if (_context.Customers == null)
+                {
+                    return NotFound();
+                }
+
+                var customer = await _context.Customers.FindAsync(id);
+                if (customer == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Customers.Remove(customer);
+                await _context.SaveChangesAsync();
+
+                return NoContent();
             }
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
+            catch (DbUpdateConcurrencyException)
             {
-                return NotFound();
+                if (!CustomerExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    // Handle the exception and return a 500 status code
+                    return StatusCode(500, "An error occurred while deleting the customer.");
+                }
             }
-
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception)
+            {
+                // Handle any other exception and return a 500 status code
+                return StatusCode(500, "An error occurred while deleting the customer.");
+            }
         }
 
         private bool CustomerExists(int id)
