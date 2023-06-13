@@ -10,6 +10,7 @@ export class Customers extends React.Component {
     super(props);
     this.state = {
       customers: [],
+      sales: [],
       loading: true,
       showEditModal: false,
       editCustomerId: null,
@@ -20,6 +21,7 @@ export class Customers extends React.Component {
 
   componentDidMount() {
     this.fetchCustomers();
+    this.fetchSales();
     toastr.options = {
       closeButton: true,
       progressBar: true,
@@ -41,6 +43,14 @@ export class Customers extends React.Component {
       .then((response) => response.json())
       .then((data) => {
         this.setState({ customers: data, loading: false });
+      });
+  };
+
+  fetchSales = () => {
+    fetch("api/Sales")
+      .then((response) => response.json())
+      .then((data) => {
+        this.setState({ sales: data, loading: false });
       });
   };
 
@@ -105,6 +115,19 @@ export class Customers extends React.Component {
   };
 
   handleDeleteCustomer = async (customerId) => {
+    const dataExist = this.state.sales.find(
+      (sales) => 
+      sales.customerId === customerId
+    )
+    if (dataExist) {
+      toastr.error(
+        "Failed to delete this customer. The customer may have existing sale records.",
+        "",
+        { positionClass: "toast-center" }
+      );
+      this.handleCloseDelete();
+      return {};
+    }
     try {
       const response = await fetch(`api/Customers/${customerId}`, {
         method: "DELETE",
@@ -118,17 +141,9 @@ export class Customers extends React.Component {
         }));
         this.handleCloseDelete();
         toastr.success("Customer was deleted successfully");
-      } else if (response.status === 500) {
-        toastr.error(
-          "Failed to delete this customer. The customer may have existing sale records.",
-          "",
-          { positionClass: "toast-center" }
-        );
-      } else {
-        toastr.error("Failed to delete the customer");
-      }
+      } 
     } catch (error) {
-      toastr.error("Failed to delete the customer");
+      toastr.error("Failed to delete the customer, Please try again.");
     }
   };
   

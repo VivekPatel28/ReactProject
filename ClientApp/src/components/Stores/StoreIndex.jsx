@@ -10,6 +10,7 @@ export class Stores extends React.Component {
     super(props);
     this.state = {
       stores: [],
+      sales:[],
       loading: true,
       showEditModal: false,
       editStoreId: null,
@@ -20,6 +21,7 @@ export class Stores extends React.Component {
 
   componentDidMount() {
     this.fetchStores();
+    this.fetchSales();
     toastr.options = {
       closeButton: true,
       progressBar: true,
@@ -41,6 +43,14 @@ export class Stores extends React.Component {
       .then((response) => response.json())
       .then((data) => {
         this.setState({ stores: data, loading: false });
+      });
+  };
+
+  fetchSales = () => {
+    fetch("api/Sales")
+      .then((response) => response.json())
+      .then((data) => {
+        this.setState({ sales: data, loading: false });
       });
   };
 
@@ -105,6 +115,19 @@ export class Stores extends React.Component {
   };
 
   handleDeleteStore = async (storeId) => {
+    const dataExist = this.state.sales.find(
+      (sales) => 
+      sales.storeId === storeId
+    )
+    if (dataExist) {
+      toastr.error(
+        "Failed to delete this store. The store may have existing sale records.",
+        "",
+        { positionClass: "toast-center" }
+      );
+      this.handleCloseDelete();
+      return {};
+    }
     try {
       const response = await fetch(`api/Stores/${storeId}`, {
         method: "DELETE",
@@ -116,13 +139,7 @@ export class Stores extends React.Component {
         }));
         this.handleCloseDelete();
         toastr.success("Store was deleted successfully");
-      } else {
-        toastr.error(
-          "Failed to delete this store. The store may have existing sale records.",
-          "",
-          { positionClass: "toast-center" }
-        );
-      }
+      } 
     } catch (error) {
       toastr.error("Failed to delete the store");
     }

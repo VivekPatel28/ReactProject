@@ -10,6 +10,7 @@ export class Products extends React.Component {
     super(props);
     this.state = {
       products: [],
+      sales:[],
       loading: true,
       showEditModal: false,
       editProductId: null,
@@ -20,6 +21,7 @@ export class Products extends React.Component {
 
   componentDidMount() {
     this.fetchProducts();
+    this.fetchSales();
     toastr.options = {
       closeButton: true,
       progressBar: true,
@@ -41,6 +43,14 @@ export class Products extends React.Component {
       .then((response) => response.json())
       .then((data) => {
         this.setState({ products: data, loading: false });
+      });
+  };
+
+  fetchSales = () => {
+    fetch("api/Sales")
+      .then((response) => response.json())
+      .then((data) => {
+        this.setState({ sales: data, loading: false });
       });
   };
 
@@ -99,6 +109,19 @@ export class Products extends React.Component {
   };
 
   handleDeleteProduct = async (productId) => {
+    const dataExist = this.state.sales.find(
+      (sales) => 
+      sales.productId === productId
+    )
+    if (dataExist) {
+      toastr.error(
+        "Failed to delete this product. The product may have existing sale records.",
+        "",
+        { positionClass: "toast-center" }
+      );
+      this.handleCloseDelete();
+      return {};
+    }
     try {
       const response = await fetch(`api/Products/${productId}`, {
         method: "DELETE",
@@ -112,15 +135,9 @@ export class Products extends React.Component {
         }));
         this.handleCloseDelete();
         toastr.success("Product was deleted successfully");
-      } else {
-        toastr.error(
-          "Failed to delete this product. The product may have existing sale records.",
-          "",
-          { positionClass: "toast-center" }
-        );
       }
     } catch (error) {
-      toastr.error("Failed to delete the product");
+      toastr.error("Failed to delete the product, Please try again.");
     }
   };
 
